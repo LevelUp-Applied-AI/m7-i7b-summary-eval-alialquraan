@@ -11,7 +11,8 @@ import json
 import os
 
 import pandas as pd
-
+from transformers import pipeline
+from rouge_score import rouge_scorer
 
 # -- Helpers (provided — do NOT modify) --------------------------------------
 
@@ -37,7 +38,12 @@ def _output_path() -> str:
 def build_summarizer(model_name: str):
     """Construct a Hugging Face summarization pipeline."""
     # TODO: build a summarization pipeline using the given model name (same as the drill)
-    raise NotImplementedError("build_summarizer not implemented")
+    summarizer = pipeline(
+        "summarization",
+        model=model_name
+    )
+
+    return summarizer
 
 
 def summarize_one(summ, text: str, max_length: int = 120, min_length: int = 30) -> str:
@@ -48,7 +54,16 @@ def summarize_one(summ, text: str, max_length: int = 120, min_length: int = 30) 
     [0]["summary_text"].
     """
     # TODO: invoke the pipeline with deterministic generation parameters (no sampling, beam search) and return the summary string
-    raise NotImplementedError("summarize_one not implemented")
+    
+    result = summ(
+        text,
+        max_length=max_length,
+        min_length=min_length,
+        do_sample=False,
+        num_beams=4
+    )
+
+    return result[0]["summary_text"]
 
 
 # -- Task 2: ROUGE -----------------------------------------------------------
@@ -64,7 +79,18 @@ def compute_rouge(pred: str, ref: str) -> dict:
     """
     # TODO: build a stemming-enabled ROUGE scorer over the three metric variants
     # TODO: score the (reference, predicted) pair and return F1 measures only (note argument order)
-    raise NotImplementedError("compute_rouge not implemented")
+    scorer = rouge_scorer.RougeScorer(
+        ["rouge1", "rouge2", "rougeL"],
+        use_stemmer=True
+    )
+
+    scores = scorer.score(ref, pred)
+
+    return {
+        "rouge1": scores["rouge1"].fmeasure,
+        "rouge2": scores["rouge2"].fmeasure,
+        "rougeL": scores["rougeL"].fmeasure,
+    }
 
 
 # -- Task 3: Evaluate over the corpus ----------------------------------------
@@ -88,7 +114,47 @@ def evaluate_summaries(summ, articles_df: pd.DataFrame, refs_df: pd.DataFrame) -
     # TODO: merge the two DataFrames on article_id
     # TODO: iterate, summarize each article, compute ROUGE vs. reference
     # TODO: aggregate (mean across summaries) and return the dict
-    raise NotImplementedError("evaluate_summaries not implemented")
+    merged_df = articles_df.merge(refs_df, on="article_id")
+
+    predictions = []
+
+    rouge1_scores = []
+    rouge2_scores = []
+    rougeL_scores = []
+
+    for _, row in merged_df.iterrows():
+
+        article_id = row["article_id"]
+        article_text = row["text"]
+        reference_summary = row["reference_summary"]
+
+        predicted_summary = summarize_one(summ, article_text)
+
+        rouge_scores = compute_rouge(
+            predicted_summary,
+            reference_summary
+        )
+
+        rouge1_scores.append(rouge_scores["rouge1"])
+        rouge2_scores.append(rouge_scores["rouge2"])
+        rougeL_scores.append(rouge_scores["rougeL"])
+
+        predictions.append({
+            "article_id": article_id,
+            "reference_summary": reference_summary,
+            "predicted_summary": predicted_summary,
+            "rouge1": rouge_scores["rouge1"],
+            "rouge2": rouge_scores["rouge2"],
+            "rougeL": rouge_scores["rougeL"],
+        })
+
+    return {
+        "rouge1": sum(rouge1_scores) / len(rouge1_scores),
+        "rouge2": sum(rouge2_scores) / len(rouge2_scores),
+        "rougeL": sum(rougeL_scores) / len(rougeL_scores),
+        "n": len(predictions),
+        "predictions": predictions,
+    }
 
 
 # -- Task 4: Orchestrate -----------------------------------------------------

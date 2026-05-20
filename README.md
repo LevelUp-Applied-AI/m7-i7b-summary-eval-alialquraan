@@ -1,51 +1,112 @@
 # Module 7 Week B — Integration Task: Summarization & Integrated Evaluation Report
 
-This is the starter repo for the Module 7 Week B Integration Task. **The integrated evaluation report you produce here is the M7 deliverable.**
+This repository implements the Module 7 Week B Integration Task for evaluating and comparing pre-trained NLP models across multiple tasks including classification, question answering, and abstractive summarization.
 
-The full integration guide is at <a href="https://levelup-applied-ai.github.io/aispire-14005-pages/modules/module-7/496c1c2b" target="_blank">the integration guide page</a> — read it first.
+The main objective of this project is to study the trade-offs between:
+- Fine-tuned models (Lab 7A)
+- Pre-trained QA systems (Lab 7B)
+- Pre-trained summarization systems (Integration 7B)
+
+The final deliverable is the integrated evaluation report (integrated-evaluation-report.md), which provides a full comparison of all approaches using real evaluation metrics.
+
+---
 
 ## Quick start
 
-```bash
-pip install -r requirements.txt
-make summarize    # runs full pipeline; first run downloads ~250 MB
-```
+Install dependencies and run full evaluation:
 
-The first call to `pipeline("summarization", ...)` downloads the model. Plan ~3 minutes for the first run; subsequent runs use cached weights. The full evaluation on 120 articles completes in ~6–8 minutes on CPU after the model is cached.
+pip install -r requirements.txt  
+make summarize  
 
-## What you will produce
+The first execution downloads the Hugging Face model (~250MB).  
+Subsequent runs reuse cached weights.
 
-Committed:
-- `summarize.py` — your implementation
-- Updated `README.md` — 1–2 paragraphs documenting model id, corpus version, re-run command (this section is the template; replace it)
-- `summary_predictions.csv` — 120 rows with reference, predicted, and per-summary ROUGE
-- `summary_metrics.json` — aggregate ROUGE-1/2/L F1
-- `integrated-evaluation-report.md` — six-section integrated report (the M7 deliverable). Includes an optional Section 7 (Challenge Extensions) for learners completing challenge tiers — see the integration's learner guide.
+The full evaluation on 120 articles takes approximately 6–8 minutes on CPU.
 
-**No model file** — pre-trained model loads from Hugging Face Hub at runtime.
+---
 
-## Data
+## Summarization Model
 
-- `data/tech_news_articles.csv` — 1,033 tech / entertainment / digital-culture news articles, curated from <a href="https://huggingface.co/datasets/glnmario/news-qa-summarization" target="_blank">glnmario/news-qa-summarization</a>. The full pool is here for inspection and stretch use; the integration evaluates on the 120-article subset that has reference summaries.
-- `data/tech_news_summaries_reference.csv` — 120 reference summaries (one per evaluated article), shipped with the curated dataset (CNN editor-authored summaries from the source dataset).
-- `data/tiny_articles_smoke.csv` + `data/tiny_refs_smoke.csv` — 3-row CI smoke fixtures (articles and references in separate files, matching the real-data schema).
+We use the Hugging Face model:
 
-## Make targets
+sshleifer/distilbart-cnn-6-6
 
-```bash
-make summarize    # full pipeline against the 120-article evaluation set
-make smoke        # CI-only target — 3-row fixture
-make clean        # remove generated outputs
-```
+This is a distilled version of BART fine-tuned on the CNN/DailyMail dataset for abstractive summarization tasks.
 
-## Submission
+Key characteristics:
+- Transformer-based encoder-decoder architecture
+- Optimized for news summarization
+- Produces fluent abstractive summaries rather than extractive copying
+- Lightweight compared to full BART models
 
-Open a Pull Request from your working branch into `main`. The autograder runs `make smoke` against the 3-row fixture and validates artifact schemas. PR description requirements are in the integration guide.
+---
+
+## Dataset Description
+
+The evaluation dataset consists of:
+
+- 120 curated tech, entertainment, and digital culture news articles
+- Human-written reference summaries aligned with each article
+- Source dataset: glnmario/news-qa-summarization (Hugging Face)
+
+Additionally, the full corpus contains 1,033 articles, but evaluation is restricted to the labeled 120-sample subset.
+
+---
+
+## Output Artifacts
+
+Running the pipeline generates the following files:
+
+- summary_predictions.csv  
+  Contains article_id, reference summary, predicted summary, and per-sample ROUGE scores.
+
+- summary_metrics.json  
+  Contains aggregated ROUGE-1, ROUGE-2, and ROUGE-L F1 scores across the full dataset.
+
+- integrated-evaluation-report.md  
+  A structured analysis comparing:
+  - Fine-tuned classification performance (Lab 7A)
+  - Pre-trained QA performance (Lab 7B)
+  - Pre-trained summarization performance (Integration 7B)
+
+---
+
+## Make Commands
+
+make summarize   # Run full evaluation pipeline on 120 articles  
+make smoke       # Run CI validation on 3-sample dataset  
+make clean       # Remove generated outputs  
+
+---
+
+## Key Observations
+
+This project demonstrates several important machine learning concepts:
+
+1. Pre-trained models can perform competitive summarization without task-specific training.
+2. Evaluation metrics like ROUGE provide approximate similarity but do not guarantee factual correctness.
+3. Fine-tuning improves domain performance but reduces flexibility across tasks.
+4. Pre-trained inference significantly reduces training cost and development time.
+
+---
+
+## Submission Guidelines
+
+Submit your work via a Pull Request into the main branch.
+
+The autograder validates:
+- Correct execution of make smoke
+- Proper output file generation
+- Schema correctness of CSV and JSON outputs
 
 ---
 
 ## License
 
-This repository is provided for educational use only. See [LICENSE](LICENSE) for terms.
+This repository is for educational purposes only.
 
-You may clone and modify this repository for personal learning and practice, and reference code you wrote here in your professional portfolio. Redistribution outside this course is not permitted.
+You may use this code for learning and portfolio demonstration.
+
+Redistribution outside this course is strictly prohibited.
+
+This repository also includes full reproducibility guarantees and deterministic evaluation settings for consistent experimental results.
